@@ -24,7 +24,7 @@ public:
     K = _E * H.transpose() / S(0);
     // m_dist
     m_dist = _r * _r / S(0);
-    cout << i << ": " << m_dist << endl;
+    // cout << i << ": " << m_dist << endl;
     if (m_dist > tol)
       return 1;
     // update
@@ -68,27 +68,28 @@ public:
       J = df(all, {10, 11}); // dfdmu ? dfdmes?
       //
       r = fs<double>(pk, pos, mk);
-      cout << "r: " << r << endl;
+      // cout << "r: " << r << endl;
       dr = (J * (m0 - mk) + H * (_p - pk))(0);
-      cout << "dr: " << dr << endl;
+      // cout << "dr: " << dr << endl;
       S = (H * _E * H.transpose() + J * _W * J.transpose())(0);
       if ((_E * H.transpose() / S * (r + dr)).array().isNaN().sum())
         break;
       K = _E * H.transpose() / S;
-      cout << "K: " << K.transpose() << endl;
+      // cout << "K: " << K.transpose() << endl;
       pk = _p - K * (r + dr);
       mk = m0 - (_W * J.transpose() / S) * (r + dr);
-      cout << "mk: " << mk.transpose() << endl;
-      cout << "pk: " << pk.transpose() << endl;
-      cout << "sum: " << _E.sum() << endl << endl;
+      // cout << "mk: " << mk.transpose() << endl;
+      // cout << "pk: " << pk.transpose() << endl;
+      // cout << "sum: " << _E.sum() << endl << endl;
       if (abs(r) < 1)
         break;
       // usleep(200e3);
     }
-    cout << endl
-         << "break!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-            "!!!!!!!!!!!"
-         << endl;
+    // << endl
+    //     <<
+    //     "break!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    //       "!!!!!!!!!!!"
+    //    << endl;
     _p = pk;
     // jacs
     df = dftd(_p, pos, mk.transpose());

@@ -10,26 +10,12 @@ T fs(const Vector<double, 6> &p, const Vector2d &pos, const Vector2d &m) {
   return ft2<T>(p(0), p(1), p(2), p(3), p(4), p(5), pos(0), pos(1), m(0), m(1),
                 0, 0);
 }
-// for Jmes->Emes
-MatrixX2d dftdmu(VectorXd p, Vector2d pos, MatrixX2d m) {
-  MatrixX2d ans(m.rows(), 2);
-  for (unsigned i = 0; i < m.rows(); i++) {
-    ans(i, 0) = dftdn(p, pos, m.row(i), 10); // dftd(mud)
-    ans(i, 1) = dftdn(p, pos, m.row(i), 11); // dftd(muan)
-  }
-  return ans;
-}
-// for H
-MatrixXd dftdp(VectorXd p, Vector2d pos, MatrixX2d m) {
-  MatrixXd ans(m.rows(), 6);
-  for (unsigned i = 0; i < m.rows(); i++) {
-    ans(i, 0) = dftdn(p, pos, m.row(i), 0); // dftd(xc)
-    ans(i, 1) = dftdn(p, pos, m.row(i), 1); // dftd(yc)
-    ans(i, 2) = dftdn(p, pos, m.row(i), 2); // dftd(phi)
-    ans(i, 3) = dftdn(p, pos, m.row(i), 3); // dftd(a)
-    ans(i, 4) = dftdn(p, pos, m.row(i), 4); // dftd(b)
-    ans(i, 5) = dftdn(p, pos, m.row(i), 5); // dftd(eps)
-  }
+
+VectorXd fsn(const Vector<double, 6> &p, const Vector2d &pos,
+             const Matrix<double, Dynamic, 2> &m) {
+  VectorXd ans(m.rows());
+  for (int i = 0; i < m.rows(); i++)
+    ans(i) = fs<double>(p, pos, m(i, all));
   return ans;
 }
 

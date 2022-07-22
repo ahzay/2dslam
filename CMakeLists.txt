@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PYTHON_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS} /usr/lib/python3.10/site-packages/numpy/core/include)
 
 
-add_executable(2dslam main.cpp vecext.hpp simulate.hpp preproc.hpp segmentation.hpp diff.hpp dop.hpp ekf.hpp ls.hpp)
+add_executable(2dslam main.cpp vecext.hpp simulate.hpp preproc.hpp segmentation.hpp diff.hpp dop.hpp ekf.hpp ls.hpp visualizer.cpp visualizer.hpp matplotlibcpp.cpp)
 
 # external libs
 # find_package(FastAD CONFIG REQUIRED)
