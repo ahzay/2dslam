@@ -148,10 +148,10 @@ Vector<double, 6> LS(VectorXd xdata, VectorXd ydata, Vector2d loc, double *p0) {
     problem[i].SetParameterUpperBound(pa[i], 4, 30);   // b
     problem[i].SetParameterUpperBound(pa[i], 5, 1.99); // eps
     // avoids auto-occlusion
-    problem[i].SetParameterUpperBound(pa[i], 0, max(p0[6], p0[0])); // x
-    problem[i].SetParameterLowerBound(pa[i], 0, min(p0[6], p0[0])); // x
-    problem[i].SetParameterUpperBound(pa[i], 1, max(p0[7], p0[1])); // y
-    problem[i].SetParameterLowerBound(pa[i], 1, min(p0[7], p0[1])); // y
+    problem[i].SetParameterUpperBound(pa[i], 0, p0[0]); // x
+    problem[i].SetParameterLowerBound(pa[i], 0, p0[0]); // x
+    problem[i].SetParameterUpperBound(pa[i], 1, p0[1]); // y
+    problem[i].SetParameterLowerBound(pa[i], 1, p0[1]); // y
   }
   ceres::Solver::Options options;
   options.num_threads = 16;

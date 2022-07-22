@@ -6,6 +6,7 @@ using namespace std;
 int main() {
   cout << "Define environment and path then simulate" << endl;
   vector<vecext<double>> ps = {{8, 8, M_PI / 3, 3, 3, 1.3},
+                               //{-5, 10, 0, 2, 2, 1.0},
                                {0, 0, 0, 2, 2, 0.4}};
   vector<vecext<double>> ls;
   Visualizer v;
@@ -40,7 +41,7 @@ int main() {
   for (auto &scan : scans) {
     v.add_points(scan.pts, "r.");
     cout << "    Segmenting scan" << endl;
-    auto aggregates = segment_scan(scan, P, Q, W, 1300, 1, 20, 1500);
+    auto aggregates = segment_scan(scan, P, Q, W, 1300, 1, 20, 500);
     // iterate over aggregates for augmentation
     for (auto &a : aggregates) {
       if (a.idx > -1) {
