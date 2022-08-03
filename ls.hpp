@@ -84,17 +84,19 @@ Vector<double, 6> LS(VectorXd xdata, VectorXd ydata, Vector2d loc) {
   double *p6 = new double[]{p2[0], p2[1], p2[8], p2[3], p2[4], p2[5]};
   double *p7 = new double[]{p3[0], p3[1], p3[8], p3[3], p3[4], p3[5]};
   double *pa[] = {p0.data(), p1, p2, p3, p4, p5, p6, p7};
-  ceres::Problem *problem = new ceres::Problem[8]; // destructor segfaults
+  // double *pa[] = {p0.data(), p1, p2, p3};
+  unsigned vars = 8;
+  ceres::Problem *problem = new ceres::Problem[vars]; // destructor segfaults
   // ceres::Problem problem[8];
   for (unsigned i = 0; i < xdata.size(); i++) {
     ceres::CostFunction *cost_function =
         new ceres::AutoDiffCostFunction<MyLossFunction, 1, 6>(
             new MyLossFunction(xdata(i), ydata(i)));
-    for (unsigned i = 0; i < 8; i++)
+    for (unsigned i = 0; i < vars; i++)
       problem[i].AddResidualBlock(cost_function, nullptr, pa[i]);
   }
   // bounds
-  for (unsigned i = 0; i < 8; i++) {
+  for (unsigned i = 0; i < vars; i++) {
     problem[i].SetParameterLowerBound(pa[i], 3, 1);    // a
     problem[i].SetParameterLowerBound(pa[i], 4, 1);    // b
     problem[i].SetParameterLowerBound(pa[i], 5, 0.1);  // eps <- very important
@@ -108,18 +110,18 @@ Vector<double, 6> LS(VectorXd xdata, VectorXd ydata, Vector2d loc) {
     problem[i].SetParameterLowerBound(pa[i], 1, min(p0[7], p0[1])); // y
   }
   ceres::Solver::Options options;
-  options.num_threads = 16;
+  options.num_threads = 1;
   options.minimizer_progress_to_stdout = false;
   options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY; //<- slower
   options.preconditioner_type = ceres::CLUSTER_JACOBI;       //<- also slower
-  options.initial_trust_region_radius = 1e8;                 // important
+  // options.initial_trust_region_radius = 1e8;                 // important
   options.max_num_iterations = 1000;
-  ceres::Solver::Summary summary[8];
-  for (unsigned i = 0; i < 8; i++)
+  ceres::Solver::Summary summary[vars];
+  for (unsigned i = 0; i < vars; i++)
     ceres::Solve(options, &problem[i], &summary[i]);
   unsigned opt = 0;
   double min_cost = 10000;
-  for (unsigned i = 0; i < 8; i++)
+  for (unsigned i = 0; i < vars; i++)
     if (summary[i].final_cost < min_cost) {
       min_cost = summary[i].final_cost;
       opt = i;
@@ -148,18 +150,18 @@ Vector<double, 6> LS(VectorXd xdata, VectorXd ydata, Vector2d loc, double *p0) {
     problem[i].SetParameterUpperBound(pa[i], 4, 30);   // b
     problem[i].SetParameterUpperBound(pa[i], 5, 1.99); // eps
     // avoids auto-occlusion
-    problem[i].SetParameterUpperBound(pa[i], 0, p0[0]); // x
-    problem[i].SetParameterLowerBound(pa[i], 0, p0[0]); // x
-    problem[i].SetParameterUpperBound(pa[i], 1, p0[1]); // y
-    problem[i].SetParameterLowerBound(pa[i], 1, p0[1]); // y
+    // problem[i].SetParameterUpperBound(pa[i], 0, p0[0]); // x
+    // problem[i].SetParameterLowerBound(pa[i], 0, p0[0]); // x
+    // problem[i].SetParameterUpperBound(pa[i], 1, p0[1]); // y
+    // problem[i].SetParameterLowerBound(pa[i], 1, p0[1]); // y
   }
   ceres::Solver::Options options;
-  options.num_threads = 16;
+  options.num_threads = 1;
   options.minimizer_progress_to_stdout = false;
-  options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY; //<- slower
-  options.preconditioner_type = ceres::CLUSTER_JACOBI;       //<- also slower
-  options.initial_trust_region_radius = 1e8;                 // important
-  options.max_num_iterations = 1000;
+  // options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY; //<- slower
+  // options.preconditioner_type = ceres::CLUSTER_JACOBI;       //<- also slower
+  // options.initial_trust_region_radius = 1e8;                 // important
+  options.max_num_iterations = 10;
   ceres::Solver::Summary summary[1];
   for (unsigned i = 0; i < 1; i++)
     ceres::Solve(options, &problem[i], &summary[i]);

@@ -11,6 +11,7 @@ add_executable(2dslam main.cpp vecext.hpp simulate.hpp preproc.hpp segmentation.
 
 # external libs
 # find_package(FastAD CONFIG REQUIRED)
+find_package(Boost COMPONENTS system filesystem REQUIRED)
 find_package(Ceres REQUIRED)
 find_package(autodiff REQUIRED)
 # matplot
@@ -41,6 +42,8 @@ target_include_directories(2dslam
 
 target_link_libraries(2dslam
   PRIVATE
+    ${Boost_FILESYSTEM_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
     ${CERES_LIBRARIES}
     Python3::Python
     Python3::Module

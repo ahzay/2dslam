@@ -64,6 +64,44 @@ public:
     return data;
   }
 
+  tuple<vecext<T>, vecext<T>, vecext<T>, vecext<T>>
+  simulate2(vector<vecext<T>> ps, vecext<T> loc, T theta, T rnd) {
+
+    random_device rd;  // used to obtain a seed for the random number engine
+    mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
+    uniform_real_distribution<> dist(0.0, 1.0);
+    // optimizing t to only look in the direction of the object
+    // double direction = atan2(p[1] - loc[1], p[0] - loc[0]);
+    vecext<T> t = linspace(0.0, 2 * M_PI, size_t(2 * M_PI / theta) + 1);
+    vecext<T> x, y, d, th;
+
+    //#pragma omp critical
+    //#pragma omp parallel for ordered shared(x, y)
+    for (T angle : t) {
+      for (auto &p : ps) {
+        vecext<T> X = linspace(0.0, 40.0, 100000) * cos(angle) + loc[0];
+        vecext<T> Y = linspace(0.0, 40.0, 100000) * sin(angle) + loc[1];
+        vecext<T> res = pow(pow(f1(p, X, Y), 2.0), (1 / p[5])) +
+                        pow(pow(f2(p, X, Y), 2.0), (1 / p[5])) - 1.0;
+        int min_idx = res.minimas_idx(0);
+        T min = 10;
+        if (min_idx != -1)
+          min = abs(res.at(min_idx));
+        //#pragma omp ordered
+        if (min < 0.001) {
+          d.push_back(linspace(0.0, 40.0, 100000)[min_idx] + dist(gen) * rnd -
+                      rnd / 2);
+          th.push_back(angle);
+          x.push_back(d.back() * cos(th.back()) + loc[0]);
+          y.push_back(d.back() * sin(th.back()) + loc[1]);
+          goto next;
+        }
+      }
+    next:;
+    }
+    return {x, y, d, th};
+  }
+
 private:
   vecext<T> f1(vecext<T> p, vecext<T> x, vecext<T> y) {
     return ((x - p[0]) * cos(p[2]) + (y - p[1]) * sin(p[2])) / p[3];
@@ -89,13 +127,18 @@ full_sim(vector<vecext<double>> ps, vector<vecext<double>> ls, double theta,
   vector<tuple<vecext<double>, vecext<double>, vecext<double>, vecext<double>>>
       res;
   // iterate over locations
-  for (auto l : ls) {
+  tuple<vecext<double>, vecext<double>, vecext<double>, vecext<double>> data;
+  //#pragma omp critical
+  //#pragma omp parallel for ordered shared(res)
+  for (auto &l : ls) {
     // iterate over objects
-    auto data = sim.simulate(ps[0], l, theta, rnd);
-    for (unsigned i = 1; i < ps.size(); i++) {
-      data = sim.simulate(data, ps[i], l, theta, rnd);
-    }
-    res.push_back(data);
+    // auto data = sim.simulate(ps[0], l, theta, rnd);
+    // for (unsigned i = 1; i < ps.size(); i++) {
+    //  data = sim.simulate(data, ps[i], l, theta, rnd);
+    //}
+    data = sim.simulate2(ps, l, theta, rnd);
+    //#pragma omp ordered
+    { res.push_back(data); }
   }
   return res;
 }

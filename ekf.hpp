@@ -24,7 +24,7 @@ public:
     K = _E * H.transpose() / S(0);
     // m_dist
     m_dist = _r * _r / S(0);
-    // cout << i << ": " << m_dist << endl;
+    cout << i << " mdist: " << m_dist << endl;
     if (m_dist > tol)
       return 1;
     // update
@@ -90,6 +90,11 @@ public:
     //     "break!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     //       "!!!!!!!!!!!"
     //    << endl;
+    // testing
+    if (pk(5) < 0.1)
+      pk(5) = 0.1;
+    if (pk(5) > 1.99)
+      pk(5) = 1.99;
     _p = pk;
     // jacs
     df = dftd(_p, pos, mk.transpose());

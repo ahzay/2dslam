@@ -13,9 +13,11 @@ struct Aggregate {
 bool isContinuous(Matrix<double, Dynamic, 2> mes, double d_tol, double an_tol) {
   for (int i = 1; i < mes.rows(); i++) {
     double var_d = abs(mes(i, 0) - mes(i - 1, 0));
-    double var_an = abs(mes(i, 1) - mes(i - 1, 1));
-    if (var_d > d_tol || var_an > an_tol)
+    double var_an = abs(remainder(mes(i, 1) - mes(i - 1, 1), M_PI / 2));
+    if (var_d > d_tol || var_an > an_tol) {
+      cout << "not continuous!" << var_d << " " << var_an << endl;
       return 0;
+    }
   }
   return 1;
 }
@@ -39,8 +41,11 @@ int associate_index(Scan scan, int b, int e, vector<Vector<double, 6>> &P,
     ArrayXd m_dist = r.array() * r.array() / S.diagonal().array();
     double sum = m_dist.matrix().sum() / m_dist.size();
     cout << "sum: " << sum << endl;
-    if (sum < min_m) {
-      min_m = sum;
+    if (isnan(sum)) {
+      cout << "isnan - S: " << S.diagonal().transpose();
+    }
+    if (abs(sum) < min_m) {
+      min_m = abs(sum);
       min_i = i;
     }
   }
@@ -58,16 +63,18 @@ vector<Aggregate> segment_scan(Scan scan, vector<Vector<double, 6>> &P,
   int i = 0, LScnt = 0; // measure counter
   int lasti, idx;       // i of start of last segment
   // temps
-  Eigen::Vector<double, 6> p_i;
-  Matrix<double, 6, 6> En;
+  Vector<double, 6> p_i = Vector<double, 6>::Zero();
+  Matrix<double, 6, 6> En = Matrix<double, 6, 6>::Zero();
   // state machine
 init:
-  // cout << "init!" << endl;
+  cout << "init! " << i << endl;
   lasti = i;
   if (i < scan.mes.rows() - npts) { // STATE MACHINE
     // basic continuous check
-    while (!isContinuous(scan.mes(seq(i, i + npts), all), 2, 0.2))
+    if (!isContinuous(scan.mes(seq(i, i + npts), all), 0.5, 0.1)) {
       i += 1;
+      goto init;
+    }
     // association with P global vector
     idx = associate_index(scan, i, i + npts, P, tol_aug);
     cout << "associated with: " << idx << endl;
@@ -80,7 +87,7 @@ init:
     Ekf ekf(p_i, En, Q, W);
     goto flexible;
   flexible:
-    // cout << "flexible!" << endl;
+    cout << "flexible! " << i << endl;
     //  aberrant measure
     if (ekf.update(scan.loc, scan.mes.row(i), tol_flx, i)) {
       i += 1; // ITERATE
@@ -90,13 +97,16 @@ init:
       goto strict;
     }
   strict: // break point maybe
-    // cout << "strict!" << endl;
+    cout << "strict! " << i << endl;
     if (ekf.update(scan.loc, scan.mes.row(i), tol_str, i))
       goto LS;
     else {
-      if (i >= scan.mes.rows()) {
+      if (i >= scan.mes.rows() - 1) {
+        LScnt++;
+        cout << "LS! " << LScnt << endl;
         ekf._p = LS(scan.pts(seq(lasti, i), 0), scan.pts(seq(lasti, i), 1),
-                    scan.loc, ekf._p.data());
+                    //         scan.loc, ekf._p.data());
+                    scan.loc);
         ekf._E = DOP(ekf._p, scan.loc, scan.mes(seq(lasti, i), all), 0.02);
         goto close;
       }
@@ -106,18 +116,20 @@ init:
 
   LS:
     LScnt++;
-    // cout << "LS! " << LScnt << endl;
-    ekf._p = LS(scan.pts(seq(lasti, i - 1), 0), scan.pts(seq(lasti, i - 1), 1),
-                scan.loc, ekf._p.data());
-    ekf._E = DOP(ekf._p, scan.loc, scan.mes(seq(lasti, i - 1), all), 0.02);
-    if (ekf.update(scan.loc, scan.mes.row(i), tol_str, i))
+    cout << "LS! " << LScnt << " i:" << i << endl;
+    ekf._p = LS(scan.pts(seq(lasti, i - 2), 0), scan.pts(seq(lasti, i - 2), 1),
+                //           scan.loc, ekf._p.data());
+                scan.loc);
+    ekf._E = DOP(ekf._p, scan.loc, scan.mes(seq(lasti, i - 2), all), 0.02);
+    if (ekf.update(scan.loc, scan.mes.row(i), tol_str, i) ||
+        i >= scan.mes.rows() - 1)
       goto close;
     else {
       i += 1;
       goto strict;
     }
   close:
-    cout << "close! ls count: " << LScnt << endl;
+    cout << "close! ls count: " << LScnt << " i:" << i << endl;
     ans.push_back(Aggregate());
     ans.back().p = ekf._p;
     ans.back().E = ekf._E;
@@ -138,6 +150,7 @@ void augment_scan(Aggregate a, vector<Vector<double, 6>> &P,
     iekf.update(a.loc, a.mes(i, all).transpose());
   }
   P[a.idx] = iekf._p;
+  cout << iekf._p.transpose() << endl;
 }
 
 #endif // SEGMENTATION_HPP
